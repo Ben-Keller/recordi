@@ -28,7 +28,7 @@ You need macOS 13 or later, Apple Command Line Tools with Swift 5.9 or later, Ho
 
    If `~/Documents/Recordi` already contains this checkout, use it instead of cloning again. Do not clone over an existing data folder.
 
-The installer builds `~/Applications/Recordi.app`, installs Whisper if needed, downloads and verifies the approximately 1.6 GB model, runs a sample transcription, and launches Recordi. It may install ffmpeg if the available Whisper build cannot read FLAC directly. Internet access is needed for setup; recording and transcription run locally afterward.
+The installer builds `~/Applications/Recordi.app`, installs Whisper if needed, downloads and verifies the approximately 1.6 GB model, runs a sample transcription, and launches Recordi. It may install ffmpeg if the available Whisper build cannot read MP3 or FLAC directly. Internet access is needed for setup; recording and transcription run locally afterward.
 
 Approve requested Keychain, Documents, notification, and audio permissions. Enable **Launch at Login** in Recordi's menu if desired. Full Xcode and Accessibility permission are not required.
 
@@ -45,13 +45,17 @@ RECORDI_AUDIO_HIJACK='/path/to/Audio Hijack.app' ./install.sh
 1. Enable **Settings → Advanced → Allow execution of external scripts**.
 2. Create exactly one session named **Meeting Recorder**.
 3. Route **System-Wide Audio** through an **Output Device** for listening and into a **Recorder**. Connect your microphone's **Input Device** to that same Recorder. Keep the microphone out of the Output Device path to avoid monitoring/feedback. No separate left/right routing is needed.
-4. Set the Recorder to **FLAC**, with automatic date/time filenames, no automatic splitting, and this destination on the new Mac:
+4. Set the Recorder to **MP3, 128 kbps stereo**, with automatic date/time filenames, no automatic splitting, and this destination on the new Mac:
 
    ```text
    ~/Documents/Recordi/recordings/
    ```
 
 You can use the existing working session as a reference, but check the microphone, output device, and destination on each Mac.
+
+The intended routing is shown below. System audio goes separately to the Output Device and Recorder; the microphone goes only to the Recorder. There is no Output Device → Recorder connection.
+
+![Audio Hijack setup with MP3 at 128 kbps stereo](docs/audio-hijack-setup.png)
 
 For immediate transcription after stopping:
 
@@ -68,7 +72,7 @@ Generated scripts contain this Mac's helper path; do not reuse a script copied f
 
 ## Check the setup
 
-Make a short recording containing both your voice and some computer audio. Stop, wait for transcription, and use **Open Latest Transcript** to find the text. Check that both sources were captured and the original FLAC remains in `recordings/`.
+Make a short recording containing both your voice and some computer audio. Stop, wait for transcription, and use **Open Latest Transcript** to find the text. Check that both sources were captured and the original audio remains in `recordings/`.
 
 **Diagnostics** shows dependency/session status, failed jobs, and logs. **Retry Failed Jobs** retries failed transcriptions. Starting a new recording does not wait for an earlier transcription to finish.
 
@@ -78,7 +82,7 @@ Everything you work with is under `~/Documents/Recordi`:
 
 | Folder | Contents |
 | --- | --- |
-| `recordings/` | Original audio, preserved after transcription |
+| `recordings/` | Original MP3, FLAC or WAV audio, preserved after transcription |
 | `transcripts/` | Plain text transcripts only |
 | `logs/` | Processing and app logs |
 
@@ -107,7 +111,7 @@ Installation preserves recordings, transcripts, logs, and the model. Keep the or
 ./scripts/test-install.sh  # Isolated installation and uninstall preservation
 ```
 
-The installer also runs a real transcription of the bundled public sample. No test starts a live microphone recording. Test output stays in temporary directories or `.build/`.
+The installer also runs real MP3 and FLAC transcriptions of the bundled public sample. No test starts a live microphone recording. Test output stays in temporary directories or `.build/`.
 
 ## Uninstall
 

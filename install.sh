@@ -26,7 +26,7 @@ if [[ -z "$WHISPER" ]]; then
   [[ -n "$WHISPER" ]] || WHISPER="$($BREW --prefix)/bin/whisper-cli"
 fi
 HELP="$("$WHISPER" --help 2>&1)"
-if ! /usr/bin/grep -q 'supported audio formats: flac' <<< "$HELP"; then
+if ! /usr/bin/grep -q 'supported audio formats: flac' <<< "$HELP" || ! /usr/bin/grep -q 'mp3' <<< "$HELP"; then
   if ! command -v ffmpeg >/dev/null; then
     command -v brew >/dev/null || { echo 'This Whisper build needs ffmpeg. Install Homebrew, then rerun.' >&2; exit 1; }
     HOMEBREW_NO_AUTO_UPDATE=1 brew install ffmpeg

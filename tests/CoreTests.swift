@@ -12,7 +12,7 @@ final class CoreTests {
     func tearDownWithError() throws { try? fm.removeItem(at: root) }
     func audio(_ name: String = "Meeting ' İstanbul.wav") throws -> URL {
         let url = paths.audio.appendingPathComponent(name)
-        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("fixtures/jfk.wav")
+        let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent(name.lowercased().hasSuffix(".mp3") ? "fixtures/jfk.mp3" : "fixtures/jfk.wav")
         try fm.copyItem(at: fixture, to: url); return url
     }
     func mock(fail: Bool = false, delay: Bool = false) throws -> Configuration {
@@ -21,7 +21,7 @@ final class CoreTests {
         #!/bin/bash
         set -eu
         if [[ "$1" == "--help" ]]; then
-          echo '--model --file --language --output-txt --output-srt --output-json-full --output-file'; exit 0
+          echo 'supported audio formats: flac, mp3, wav --model --file --language --output-txt --output-srt --output-json-full --output-file'; exit 0
         fi
         if [[ "$1" == "--version" ]]; then echo 'Mock 1'; exit 0; fi
         \(delay ? "/bin/sleep 0.5" : ":")
@@ -46,7 +46,7 @@ final class CoreTests {
     }
     func testSequentialOutputAndCompletionSurviveStateRemoval() throws {
         let config = try mock(); let store = JobStore(paths)
-        let first = try audio(); let second = try audio("Next meeting.wav")
+        let first = try audio("Meeting MP3.MP3"); let second = try audio("Next meeting.wav")
         let original = try Data(contentsOf: first)
         try store.enqueue(first); try store.enqueue(second)
         let worker = Worker(paths: paths)
@@ -105,7 +105,7 @@ final class CoreTests {
         checkEqual(try store.jobs().first?.status, "complete")
     }
     func testRecoveryDefersActiveUnknownAndUnstableFiles() throws {
-        let file = try audio(); let source = try Source(file, paths: paths); let store = JobStore(paths)
+        let file = try audio("Recovery.mp3"); let source = try Source(file, paths: paths); let store = JobStore(paths)
         let scan = RecoveryScanner(); let now = Date(timeIntervalSince1970: source.modified + 30)
         try scan.scan(paths: paths, confirmedIdle: false, now: now)
         checkTrue(try store.jobs().isEmpty)

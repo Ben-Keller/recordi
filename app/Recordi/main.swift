@@ -17,7 +17,7 @@ if args.isEmpty {
         try paths.create()
         switch args[0] {
         case "--enqueue":
-            guard args.count == 2 else { throw RecordiError("Usage: --enqueue /absolute/recording.flac") }
+            guard args.count == 2 else { throw RecordiError("Usage: --enqueue /absolute/recording.mp3") }
             _ = try JobStore(paths).enqueue(URL(fileURLWithPath: args[1]))
         case "--reply":
             guard args.count == 2 else { throw RecordiError("Usage: --reply JSON") }
@@ -40,8 +40,8 @@ if args.isEmpty {
             let help = try ProcessRunner().capture(args[1], ["--help"])
             let direct = help.contains("supported audio formats: flac")
             let ffmpeg = ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"].first { fm.isExecutableFile(atPath: $0) }
-            guard direct || ffmpeg != nil else { throw RecordiError("This Whisper build requires ffmpeg. Install it with brew install ffmpeg.") }
-            let config = Configuration(whisper: args[1], model: args.count > 3 ? args[3] : paths.model.path, ffmpeg: direct ? nil : ffmpeg, directFLAC: direct, audioHijack: args[2])
+            guard (direct && help.contains("mp3")) || ffmpeg != nil else { throw RecordiError("This Whisper build requires ffmpeg. Install it with brew install ffmpeg.") }
+            let config = Configuration(whisper: args[1], model: args.count > 3 ? args[3] : paths.model.path, ffmpeg: ffmpeg, directFLAC: direct, audioHijack: args[2])
             try atomic(config, to: paths.support.appendingPathComponent("config.json"))
             try bridge.installScripts()
         case "--generate-script": print(bridge.completionScript())

@@ -55,8 +55,8 @@ public struct Source: Codable, Equatable {
     public init(_ url: URL, paths: Paths) throws {
         let resolved = url.standardizedFileURL.resolvingSymlinksInPath()
         guard resolved.deletingLastPathComponent() == paths.audio.standardizedFileURL.resolvingSymlinksInPath(),
-              ["flac", "wav"].contains(resolved.pathExtension.lowercased()) else {
-            throw RecordiError("Recording must be a FLAC or WAV directly inside \(paths.audio.path).")
+              ["flac", "wav", "mp3"].contains(resolved.pathExtension.lowercased()) else {
+            throw RecordiError("Recording must be an MP3, FLAC or WAV directly inside \(paths.audio.path).")
         }
         let attrs = try fm.attributesOfItem(atPath: resolved.path)
         guard attrs[.type] as? FileAttributeType == .typeRegular,

@@ -7,12 +7,15 @@ public func validateAudio(_ url: URL) throws {
         throw RecordiError("Recording has no decodable audio.")
     }
     var frames: AVAudioFramePosition = 0
-    while file.framePosition < file.length {
+    while frames < file.length {
         try file.read(into: buffer)
-        guard buffer.frameLength > 0 else { throw RecordiError("Audio ended unexpectedly.") }
+        if buffer.frameLength == 0 { break }
         frames += AVAudioFramePosition(buffer.frameLength)
     }
-    guard frames == file.length else { throw RecordiError("Recording could not be fully decoded.") }
+    // MP3 length is an estimate and its decoder does not support framePosition.
+    guard frames > 0, url.pathExtension.lowercased() == "mp3" || frames == file.length else {
+        throw RecordiError("Recording could not be fully decoded.")
+    }
 }
 public struct WhisperOutput: Decodable {
     public struct Segment: Decodable {
@@ -75,10 +78,12 @@ public final class Worker {
             note((try? runner.capture(config.whisper, ["--version"])) ?? "Version unavailable")
             try? fm.removeItem(at: staging); try fm.createDirectory(at: staging, withIntermediateDirectories: true)
             var input = job.source.path
-            if !config.directFLAC && URL(fileURLWithPath: input).pathExtension.lowercased() == "flac" {
-                guard let ffmpeg = config.ffmpeg else { throw RecordiError("FLAC conversion requires ffmpeg. Rerun install.sh.") }
+            let format = URL(fileURLWithPath: input).pathExtension.lowercased()
+            let needsConversion = (format == "flac" && !config.directFLAC) || (format == "mp3" && !help.contains("mp3"))
+            if needsConversion {
+                guard let ffmpeg = config.ffmpeg else { throw RecordiError("Audio conversion requires ffmpeg. Rerun install.sh.") }
                 let wav = staging.appendingPathComponent("input.wav").path
-                note("Converting FLAC to temporary WAV")
+                note("Converting audio to temporary WAV")
                 guard try runner.run(ffmpeg, ["-nostdin", "-v", "error", "-i", input, "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", wav], log: log) == 0 else { throw RecordiError("Audio conversion failed.") }
                 input = wav
             }
@@ -116,7 +121,7 @@ public final class RecoveryScanner {
         guard confirmedIdle else { observed.removeAll(); return }
         let store = JobStore(paths)
         let known = Set(try store.jobs().filter { $0.status != "complete" }.map { $0.source.id })
-        for url in try fm.contentsOfDirectory(at: paths.audio, includingPropertiesForKeys: nil) where ["flac", "wav"].contains(url.pathExtension.lowercased()) {
+        for url in try fm.contentsOfDirectory(at: paths.audio, includingPropertiesForKeys: nil) where ["flac", "wav", "mp3"].contains(url.pathExtension.lowercased()) {
             guard let source = try? Source(url, paths: paths), !known.contains(source.id), !store.successful(source) else { continue }
             if let previous = observed[source.path], previous.0 == source, now.timeIntervalSince(previous.1) >= 15,
                now.timeIntervalSince1970 - source.modified >= 15 {
