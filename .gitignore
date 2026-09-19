@@ -1,0 +1,29 @@
+# Swift build output and local IDE state
+.build/
+.swiftpm/
+.DS_Store
+
+# Personal recordings, transcripts and logs
+/recordings/
+/transcripts/
+/logs/
+
+# Generated machine-specific Audio Hijack commands
+/audio-hijack/
+
+# Local project history and verification notes
+/SPEC.md
+/VERIFICATION.md
+
+# Regenerable icon intermediates
+/assets/Recordi.iconset/
+/assets/menu-preview.png
+
+# Local configuration, credentials and model downloads
+.env
+.env.*
+*.pem
+*.p12
+*.key
+/models/
+*.bin
