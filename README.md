@@ -4,7 +4,21 @@ A personal macOS menu-bar recorder. Audio Hijack captures your microphone and co
 
 Click **Start Recording**, then **Stop Recording** when finished. Transcription runs in the background, and **Open Latest Transcript** selects the newest `.txt` in Finder. Audio Hijack only needs to run during recording; Recordi leaves it closed until you start another recording.
 
-## Install on a Mac
+## Easy setup (Apple Silicon)
+
+1. Download **Recordi-Apple-Silicon.zip** from the [latest release](https://github.com/Ben-Keller/recordi/releases/latest), signed in to the GitHub account with access to this private repository.
+2. Extract the whole ZIP and open **Start Here.html**.
+3. Install Audio Hijack in Applications, then double-click **Set Up Recordi.command**. A Terminal window displays progress; no commands need to be typed.
+4. Choose **Download** for the 1.6 GB model or **Use Existing File** to reuse `ggml-large-v3-turbo.bin` from another Mac. An installed model is reused automatically.
+5. Follow the illustrated Audio Hijack instructions and try a short recording.
+
+The download includes the app and a self-contained Whisper engine. **No Git, Homebrew, developer tools, or signing certificate is needed on the new Mac.** Internet is only needed if the model must be downloaded. To copy the existing model, find it under `~/Library/Application Support/Recordi/models/` on the first Mac. You can place it beside the setup file or select it when prompted.
+
+This personal package is signed with the project's local identity, **not notarized by Apple**. If macOS blocks the setup file or app, use **System Settings → Privacy & Security → Open Anyway** after the first opening attempt, as described in [Apple's instructions](https://support.apple.com/en-gb/102445). Do not disable Gatekeeper. Once installed, updates do not build or sign anything on the new Mac; normal macOS privacy permissions still apply.
+
+The package targets Apple Silicon and macOS 13+. It has been tested on this development Mac in an isolated home, without Homebrew in PATH; a clean second-Mac installation remains to be confirmed.
+
+## Install from source (developers / Intel Macs)
 
 You need macOS 13 or later, Apple Command Line Tools with Swift 5.9 or later, Homebrew, and Audio Hijack 4 with external scripting support. This project has been tested on Apple Silicon with macOS 26.4.1, Audio Hijack 4.6.0, and whisper.cpp 1.9.4; other configurations have not been verified.
 
@@ -92,7 +106,9 @@ Recordings, transcripts, logs, model files, generated commands, signing material
 
 ## Update
 
-From the checkout on each Mac:
+For the packaged app, download the new release and run **Set Up Recordi.command** again. Existing audio, text, logs, and the verified model are preserved.
+
+For a source checkout:
 
 ```bash
 cd ~/Documents/Recordi
@@ -113,9 +129,23 @@ Installation preserves recordings, transcripts, logs, and the model. Keep the or
 
 The installer also runs real MP3 and FLAC transcriptions of the bundled public sample. No test starts a live microphone recording. Test output stays in temporary directories or `.build/`.
 
+## Build a download (maintainers)
+
+With CMake, Apple Command Line Tools, and the existing local signing identity on the build Mac:
+
+```bash
+./scripts/package.sh
+```
+
+This builds pinned whisper.cpp v1.9.4 from checksum-verified official source, statically links its libraries with embedded Metal shaders, signs the helper and app, and creates `.build/download/Recordi-Apple-Silicon.zip` plus `SHA256SUMS.txt`. The app bundles the upstream license notices. No recordings, transcripts, signing keys, or model are packaged. The archive is a private GitHub release asset, not a Git source file.
+
+Run `scripts/test-package.sh` against the extracted package before publishing. Publishing/notarization and automatic updates are deliberately separate from this simple setup.
+
 ## Uninstall
 
-Quit Recordi, then run:
+For the packaged app, quit Recordi and move `~/Applications/Recordi.app` to the Trash. Your data and model stay in place. Remove the Recording Stop automation from Audio Hijack.
+
+For a source checkout, quit Recordi, then run:
 
 ```bash
 ./uninstall.sh --dry-run

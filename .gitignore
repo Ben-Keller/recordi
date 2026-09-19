@@ -27,3 +27,6 @@
 *.key
 /models/
 *.bin
+
+# Downloadable release archives
+/dist/

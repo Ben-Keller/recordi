@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Set up Recordi</title>
+<style>
+:root{color-scheme:light dark;font:17px/1.6 -apple-system,BlinkMacSystemFont,sans-serif;background:#f6f8f8;color:#1c3135}body{max-width:780px;margin:48px auto;padding:0 24px 60px}h1{font-size:42px;line-height:1.1;letter-spacing:-1.5px}h2{margin-top:40px;font-size:24px}a{color:#087b86}code{font-size:14px;overflow-wrap:anywhere;background:#e3eeee;padding:3px 6px;border-radius:5px}img{max-width:100%;border-radius:16px}.note{padding:18px 22px;background:#e6f3ef;border-left:4px solid #159985;border-radius:8px}li{margin:12px 0}.tag{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#397d76}@media(prefers-color-scheme:dark){:root{background:#142427;color:#e9f2f2}a{color:#70d7cf}code{background:#273b3e}.note{background:#203a35}.tag{color:#70d7cf}}
+</style>
+<body>
+<p class="tag">Recordi · Apple Silicon</p>
+<h1>Your meetings, saved locally.</h1>
+<p>Record microphone and computer audio together, then turn the recording into a plain text transcript. No account or cloud transcription service is needed.</p>
+<h2>1. Install Audio Hijack</h2>
+<p>Download <a href="https://rogueamoeba.com/audiohijack/">Audio Hijack</a> and place it in Applications. It is a separate app with its own license and audio permissions.</p>
+<h2>2. Double-click Set Up Recordi</h2>
+<p>Extract the entire ZIP, then double-click <strong>Set Up Recordi.command</strong> in this folder. A Terminal window shows progress; you do not need to type commands. Leave the window open until setup finishes.</p>
+<p>Setup installs the app in your Applications folder, prepares the speech model, and checks transcription with a public sample. No Homebrew, developer tools, or local signing setup is needed.</p>
+<div class="note"><strong>Already have the model?</strong> Choose <strong>Use Existing File</strong> when asked. On your first Mac, use Finder → Go → Go to Folder to open <code>~/Library/Application Support/Recordi/models/</code>, then copy <code>ggml-large-v3-turbo.bin</code> to the new Mac. You can also place it beside this guide before running setup. Otherwise choose <strong>Download</strong> (about 1.6 GB, once per Mac). Setup verifies the file and reuses an installed copy.</div>
+<p>This personal release is not notarized. If macOS blocks the setup file or Recordi, follow <a href="https://support.apple.com/en-gb/102445">Apple’s instructions</a>: after attempting to open it, go to <strong>System Settings → Privacy &amp; Security → Open Anyway</strong>. You may need to do this once for each. Do not turn off Gatekeeper. macOS may also request permission for Terminal or Recordi to access Documents.</p>
+<h2>3. Connect your audio</h2>
+<ol>
+<li>In Audio Hijack, enable <strong>Settings → Advanced → Allow execution of external scripts</strong>.</li>
+<li>Create exactly one session named <strong>Meeting Recorder</strong>.</li>
+<li>Connect the blocks as shown below. System audio goes to both the Output Device and Recorder. The microphone goes only to the Recorder. There is no Output Device → Recorder connection.</li>
+<li>Choose your microphone and listening device. Set the Recorder to <strong>MP3, 128 kbps stereo</strong>, with automatic date/time filenames and no automatic splitting.</li>
+<li>Set its save folder to <code>~/Documents/Recordi/recordings/</code> on this Mac. In a folder picker, press <strong>Command–Shift–G</strong> to enter that path. Setup creates the folder for you.</li>
+</ol>
+<img src="docs/audio-hijack-setup.png" width="622" height="448" alt="System-Wide Audio connects separately to Output Device and the MP3 Recorder. Input Device connects to the same Recorder.">
+<h2>4. Enable the completion script</h2>
+<p>In Finder, use <strong>Go → Go to Folder</strong> to open <code>~/Library/Application Support/Recordi/commands/</code>. Open <strong>Transcribe Finished Recording.js</strong> with TextEdit and copy its contents.</p>
+<p>In Audio Hijack’s <strong>Window → Script Library</strong>, create a script named <strong>Transcribe Finished Recording</strong> and paste those contents. In <strong>Meeting Recorder → Scripting → New Automation</strong>, choose <strong>Recording Stop</strong> and run that script.</p>
+<p>Use the script generated on this Mac: it contains your local app path. Recordi can also recover completed recordings by scanning the folder while idle, usually after about 30 seconds.</p>
+<h2>5. Try a short recording</h2>
+<p>Click Recordi’s recorder icon in the menu bar and choose <strong>Start Recording</strong>. Speak and play some computer audio, then choose <strong>Stop Recording</strong>. After transcription finishes, choose <strong>Open Latest Transcript</strong> to select the text file in Finder.</p>
+<p><strong>Open Recordi Folder</strong> shows <code>recordings/</code>, <code>transcripts/</code>, and <code>logs/</code>. The original audio stays intact. Audio Hijack only needs to run while recording. Enable <strong>Launch at Login</strong> from Recordi’s menu if you want it.</p>
+<h2>Updating or retrying</h2>
+<p>Download a new package and run <strong>Set Up Recordi.command</strong> again. It preserves your recordings and transcripts and reuses the model. If a download is interrupted, run setup again to resume. If setup fails, keep the message shown in Terminal and check Recordi’s <strong>Diagnostics</strong> menu.</p>
+<p><a href="https://github.com/Ben-Keller/recordi">Project and installation details on GitHub</a> · macOS 13 or later, Apple Silicon (M1 or later). Tested on macOS 26.4.1; the setup has not yet been verified on your second Mac.</p>
+</body>
+</html>

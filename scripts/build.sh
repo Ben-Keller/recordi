@@ -19,8 +19,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleExecutable</key><string>Recordi</string>
 <key>CFBundleIconFile</key><string>Recordi</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>0.1.0</string>
-<key>CFBundleVersion</key><string>2</string>
+<key>CFBundleShortVersionString</key><string>0.2.0</string>
+<key>CFBundleVersion</key><string>3</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>LSUIElement</key><true/>
 <key>NSHighResolutionCapable</key><true/>
@@ -34,7 +34,19 @@ fi
 SIGNING_ID="$(cat "$SIGNING_FILE")"
 [[ "$SIGNING_ID" =~ ^[[:xdigit:]]{40}$ ]] || { echo 'Invalid Recordi signing fingerprint.' >&2; exit 1; }
 # Never fall back to ad-hoc signing: doing so changes the app identity and resets privacy consent.
+if [[ -n "${RECORDI_BUNDLED_WHISPER:-}" ]]; then
+  mkdir -p "$APP/Contents/Helpers" "$APP/Contents/Resources/Licenses"
+  cp "$RECORDI_BUNDLED_WHISPER" "$APP/Contents/Helpers/whisper-cli"
+  cp "${RECORDI_WHISPER_SOURCE:?}/LICENSE" "$APP/Contents/Resources/Licenses/whisper.cpp.txt"
+  /usr/bin/sed -n '/^This software is available as a choice of the following licenses\./,$p' \
+    "$RECORDI_WHISPER_SOURCE/examples/miniaudio.h" > "$APP/Contents/Resources/Licenses/miniaudio.txt"
+  /usr/bin/codesign --force --sign "$SIGNING_ID" --keychain "$HOME/Library/Keychains/login.keychain-db" \
+    --timestamp=none "$APP/Contents/Helpers/whisper-cli"
+else
+  # A source build must not accidentally ship a helper left from an earlier package build.
+  rm -rf "$APP/Contents/Helpers" "$APP/Contents/Resources/Licenses"
+fi
 /usr/bin/codesign --force --sign "$SIGNING_ID" --keychain "$HOME/Library/Keychains/login.keychain-db" \
   --timestamp=none --identifier local.recordi.app "$APP"
-/usr/bin/codesign --verify --strict "$APP"
+/usr/bin/codesign --verify --deep --strict "$APP"
 printf 'Built %s\n' "$APP"
