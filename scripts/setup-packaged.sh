@@ -3,6 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOCAL_HOME="${RECORDI_HOME:-$HOME}"
 TEST_MODE="${RECORDI_SETUP_TEST:-0}"
+source "$ROOT/scripts/setup-common.sh"
 if [[ "$TEST_MODE" != 0 ]]; then
   [[ -n "${RECORDI_HOME:-}" && "$LOCAL_HOME" != "$HOME" ]] || { echo 'Tests require an isolated RECORDI_HOME.' >&2; exit 1; }
 fi
@@ -12,6 +13,11 @@ fi
 BUNDLE="$ROOT/Recordi.app"
 APP="$LOCAL_HOME/Applications/Recordi.app"
 SUPPORT="$LOCAL_HOME/Library/Application Support/Recordi"
+mkdir -p "$SUPPORT"
+LOG="$SUPPORT/setup.log"
+# Append each attempt; preserve the original error even if the Terminal window is closed.
+exec > >(/usr/bin/tee -a "$LOG") 2>&1
+printf '\n=== Recordi setup %s ===\nLog: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$LOG"
 MODEL="$SUPPORT/models/ggml-large-v3-turbo.bin"
 EXPECTED=1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69
 check_model() { [[ -f "$MODEL" ]] && [[ "$(/usr/bin/shasum -a 256 "$MODEL" | cut -d' ' -f1)" == "$EXPECTED" ]]; }
@@ -60,15 +66,23 @@ if [[ -e "$APP" ]]; then
   [[ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Contents/Info.plist")" == local.recordi.app ]] || { echo 'An unrelated app occupies the install location. Nothing was replaced.' >&2; exit 1; }
 fi
 # Test homes must never quit the real user's app.
-if [[ "$TEST_MODE" == 0 ]]; then "$BUNDLE/Contents/MacOS/Recordi" --quit-app; fi
+if [[ "$TEST_MODE" == 0 && -x "$APP/Contents/MacOS/Recordi" ]]; then
+  setup_step 'Close the installed Recordi app' "$APP/Contents/MacOS/Recordi" --quit-app
+fi
 /usr/bin/ditto "$BUNDLE" "$APP"
 EXE="$APP/Contents/MacOS/Recordi"
 WHISPER="$APP/Contents/Helpers/whisper-cli"
-"$EXE" --configure "$WHISPER" "$AH" "$MODEL"
+configure_and_verify() {
+  "$EXE" --configure "$WHISPER" "$AH" "$MODEL" || return $?
+  verify_setup_files "$SUPPORT"
+}
+setup_step 'Configure Recordi and generate Audio Hijack scripts' configure_and_verify
 echo 'Checking transcription using public sample audio (no microphone recording)…'
-"$ROOT/scripts/smoke-transcription.sh" "$EXE" "$WHISPER" "$MODEL" "$AH"
+setup_step 'Verify sample transcription' "$ROOT/scripts/smoke-transcription.sh" "$EXE" "$WHISPER" "$MODEL" "$AH"
+verify_setup_files "$SUPPORT"
+printf 'Setup verified. Audio Hijack scripts are ready in:\n%s/commands/\n' "$SUPPORT"
 echo 'Recordi is installed. Follow the included Audio Hijack setup guide to finish.'
 if [[ "$TEST_MODE" == 0 ]]; then
-  /usr/bin/open "$ROOT/Start Here.html"
-  /usr/bin/open "$APP"
+  setup_step 'Open Recordi' /usr/bin/open "$APP"
+  /usr/bin/open "$ROOT/Start Here.html" || echo 'Open Start Here.html in the setup folder for the remaining Audio Hijack instructions.'
 fi
